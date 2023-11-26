@@ -1,6 +1,6 @@
 const mongoose=require("mongoose");
 
-const useSchema=new mongoose.Schema({
+const userSchema=new mongoose.Schema({
     name:{
         type:String,
         required:[true,"User must type name"],
@@ -13,5 +13,10 @@ const useSchema=new mongoose.Schema({
         type:Boolean,
         default:false,
     },
-});
+    room:{
+        type:mongoose.Schema.ObjectId,
+        ref:"Room"
+    }
+},
+{timestamps:true});
 module.exports=mongoose.model("User",userSchema);
