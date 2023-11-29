@@ -41,16 +41,17 @@ module.exports=function(io){
         socket.emit("rooms",await roomController.getAllRooms());
 
         // 메시지 전달
-        socket.on("sendMessage",async(message,cb)=>{
+        socket.on("sendMessage",async(receivedMessage,cb)=>{
             try{
                 const user=await userController.CheckUser(socket.id);
+                
                 if(user){
                     const message=await chatController.saveChat(receivedMessage,user);
                     io.to(user.room.toString()).emit("message",message);
                     return cb({ok:true});
                 }
             }catch(err){
-                cb({ok:false,err:err.message});
+                cb({ok:false,error:err.message});
             }
         });
 
