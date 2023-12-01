@@ -1,10 +1,16 @@
 const mongoose=require("mongoose");
 
 const userSchema=new mongoose.Schema({
+    userId:{
+        type:String,
+    },
+    pw:{
+        type:String,
+    },
     name:{
         type:String,
         required:[true,"User must type name"],
-        unique:true,
+        
     },
     token:{
         type:String,
@@ -13,10 +19,10 @@ const userSchema=new mongoose.Schema({
         type:Boolean,
         default:false,
     },
-    room:{
+    rooms:[{
         type:mongoose.Schema.ObjectId,
         ref:"Room"
-    }
+    }]
 },
 {timestamps:true});
 module.exports=mongoose.model("User",userSchema);
