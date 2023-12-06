@@ -1,7 +1,7 @@
 const mongoose=require("mongoose");
 
 const userSchema=new mongoose.Schema({
-    userId:{
+    loginId:{
         type:String,
     },
     pw:{
@@ -12,7 +12,7 @@ const userSchema=new mongoose.Schema({
         required:[true,"User must type name"],
         
     },
-    token:{
+    socketId:{
         type:String,
     },
     online:{

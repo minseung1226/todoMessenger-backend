@@ -14,12 +14,17 @@ chatController.saveChat=async(message,user)=>{
     });
 
     await newMessage.save();
+    return newMessage;    
+}
 
-
-    
-    return newMessage;
-
-    
+chatController.findChatsByRoomId=async(roomId)=>{
+    const chats=Chat.find({room:roomId})
+                    .populate('room')
+                    .sort({createdAt:1})
+                    .then(chats=>{
+                        return chats;
+                    })
+                    .catch(err=>console.log(err.message))
 }
 
 module.exports=chatController;
