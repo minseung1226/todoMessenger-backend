@@ -27,9 +27,10 @@ userController.saveUser=async(name,loginId,pw)=>{
 }
 
 userController.changeSocketId=async(socketId,userId)=>{
-    const user=await User.findOne({_id:new mongoose.Types.ObjectId(userId)});
+    const user=await User.findOne({_id:userId});
     if(!user) console.log("user not found");
     else{
+
         user.socketId=socketId;
         await user.save();
 

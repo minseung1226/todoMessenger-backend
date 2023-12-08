@@ -13,6 +13,7 @@ const jwt=require("jsonwebtoken");
 const bcrypt=require("bcrypt");
 const url=require("url");
 const querystring = require('querystring');
+const roomController = require("./Controllers/room.controller");
 app.use(cors());
 app.use(express.json());
 app.use(session({
@@ -76,9 +77,7 @@ app.post("/login",async(req,res)=>{
         res.json({ok:false});
     }
     else{
-        console.log("login userId=",user._id);
         const user2=await User.findOne({_id:user._id});
-        console.log("login user=",user2)
         const token=jwt.sign({userId:user.id},process.env.JWT_SECRET_KEY,{expiresIn:'1h'});
         res.json({ok:true,token:token});
     }
@@ -106,6 +105,14 @@ app.post("/rooms",authenticateToken,async(req,res)=>{
         .catch(err=>{
             console.error(err);
             res.status(500).send("/rooms error")})
+})
+
+app.post("/createRoom",authenticateToken,async(req,res)=>{
+
+    const roomId=await roomController.createRoom(req.body.roomName,[req.userId.userId]);
+    if(!roomId) res.status(500).send("/createRoom create error");
+    console.log("저장 완료")
+    res.json({ok:true,roomId:roomId});
 })
 mongoose.connect(process.env.DB).then(()=>console.log("database connected"));
 

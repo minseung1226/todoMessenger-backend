@@ -17,13 +17,13 @@ module.exports=function(io){
 
             jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
                 if(err)console.log("err=",err);
-                console.log("userId=",data.userId);
+
                 userId=data.userId;
             });
             await userController.changeSocketId(socket.id,userId);
 
-            const u=await User.findOne({id:userId});
-            console.log("user=",u);
+            const u=await User.findOne({_id:userId});
+
             cb({ok:true});
 
         })

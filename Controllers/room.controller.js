@@ -4,6 +4,18 @@ roomController.getAllRooms=async()=>{
     const roomList=Room.find({});
     return roomList;
 }
+
+roomController.createRoom=async(roomName,members)=>{
+    const room=new Room({
+        roomName:roomName,
+        members:members,
+    })
+
+    await room.save();
+
+    return room._id;
+}
+
 roomController.joinRoom=async(roomId,user)=>{
     const room=await Room.findById(roomId);
     if(!room){
