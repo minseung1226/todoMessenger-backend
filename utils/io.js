@@ -28,12 +28,17 @@ module.exports=function(io){
 
         })
         
-        socket.on("getAllChats",async(roomId,cb)=>{
+        socket.on("getAllChatsAndUser",async(roomId,token,cb)=>{
             try{
-                
-                
+                let userId="";
+                jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
+                    if(err)console.log("err=",err);
+                    else userId=data.userId;
+                });
+                const user=await User.findOne({_id:userId});
                 const chats=await chatController.findChatsByRoomId(roomId);
-                cb({chats:chats});
+                console.log("chats=",chats);
+                cb({chats:chats,user:user});
             }catch(err){
                 console.log(err.message);
             }
@@ -64,7 +69,7 @@ module.exports=function(io){
         // 메시지 전달
         socket.on("sendMessage",async(receivedMessage,roomId,cb)=>{
             try{
-               const user=await User.findOne({token:{$in:[socket.id]},rooms:{$in:[roomId]}});
+               const user=await User.findOne({token:socket.id,rooms:{$in:[roomId]}});
                 if(user){
                     const message=await chatController.saveChat(receivedMessage,user);
                     io.to(roomId).emit("message",message);
@@ -96,8 +101,37 @@ module.exports=function(io){
         });
 
 
+        socket.on("createRoom",async(token,roomName,cb)=>{
+            try{ 
+                let userId="";
+            jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
+                if(err) console.log("err=",err);
+                else userId=data.userId;
+            });
+            const user = await User.findOne({_id:userId});
+            const roomId=await roomController.createRoom(roomName,[userId]);
+            const system=makeSystemUser(roomId);
+            const chat=await chatController.saveChat(`${user.name} 님이 입장하셨습니다.`,system);
+
+            cb({ok:true,roomId:roomId});
+            }catch(err){
+                cb({ok:false,error:err});
+            }
+        })
+
+
         socket.on("disconnect",()=>{
             console.log("user is disconnected");
         })
     });
+
+
+    function makeSystemUser(roomId){
+        const system={
+            id:null,
+            name:"system",
+            room:roomId
+        }
+        return system;
+    }
 };

@@ -3,6 +3,7 @@ const mongoose=require("mongoose");
 const chatSchema=new mongoose.Schema(
     {
         chat:String,
+        system:Boolean,
         user:{
             id:{
                 type:mongoose.Schema.ObjectId,

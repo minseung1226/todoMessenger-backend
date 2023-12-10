@@ -111,7 +111,6 @@ app.post("/createRoom",authenticateToken,async(req,res)=>{
 
     const roomId=await roomController.createRoom(req.body.roomName,[req.userId.userId]);
     if(!roomId) res.status(500).send("/createRoom create error");
-    console.log("저장 완료")
     res.json({ok:true,roomId:roomId});
 })
 mongoose.connect(process.env.DB).then(()=>console.log("database connected"));
