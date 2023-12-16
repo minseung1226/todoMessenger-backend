@@ -10,31 +10,35 @@ module.exports=function(io){
     
     //io ~~~~
     io.on("connection",async(socket)=>{
-        console.log("client is connected",socket.id);
-
-        socket.on("saveSocketId",async(token,cb)=>{
-            let userId="";
-
-            jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
+        function getUserIdFromToken(token){
+            jwt.verify(token,process.env.JWT_SECRET_KEY(),(err,data)=>{
                 if(err)console.log("err=",err);
-
-                userId=data.userId;
-            });
+                else{
+                    return data.userId;
+                }
+            })
+        }
+        socket.on("saveSocketId",async(token,cb)=>{
+            let userId=getUserIdFromToken(token);
             await userController.changeSocketId(socket.id,userId);
 
             const u=await User.findOne({_id:userId});
 
             cb({ok:true});
 
+        });
+        
+
+
+        socket.emit("getGroup",async(token,cb)=>{
+            const userId=getUserIdFromToken(token);
+            
         })
+
         
         socket.on("getAllChatsAndUser",async(roomId,token,cb)=>{
             try{
-                let userId="";
-                jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
-                    if(err)console.log("err=",err);
-                    else userId=data.userId;
-                });
+                let userId=getUserIdFromToken(token);
                 const user=await User.findOne({_id:userId});
                 const chats=await chatController.findChatsByRoomId(roomId);
                 console.log("chats=",chats);
@@ -101,19 +105,16 @@ module.exports=function(io){
         });
 
 
-        socket.on("createRoom",async(token,roomName,cb)=>{
+        socket.on("createRoom",async(token,roomName,members,cb)=>{
             try{ 
-                let userId="";
-            jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
-                if(err) console.log("err=",err);
-                else userId=data.userId;
-            });
-            const user = await User.findOne({_id:userId});
-            const roomId=await roomController.createRoom(roomName,[userId]);
-            const system=makeSystemUser(roomId);
-            const chat=await chatController.saveChat(`${user.name} 님이 입장하셨습니다.`,system);
+                let userId=getUserIdFromToken(token);
+                members.push(userId);
+                
+                const roomId=await roomController.createRoom(roomName,members);
+                const system=makeSystemUser(roomId);
+                const chat=await chatController.saveChat(`채팅방이 생성되었습니다.`,system);
 
-            cb({ok:true,roomId:roomId});
+                cb({ok:true,roomId:roomId});
             }catch(err){
                 cb({ok:false,error:err});
             }

@@ -39,29 +39,7 @@ function authenticateToken(req,res,next){
 }
 
 
-app.get("/",async(req,res)=>{
-    
-    await userController.saveUser("민준4","qwer","qwer");
-    const user=await User.findOne({name:"민준4"});
-    Room.insertMany([
-        {
-            room:"자바스크립트 단톡방",
-            members:[user._id],
-        },
-        {
-            room:"리엑트 단톡방",
-            members:[user._id],
-        },
-        {
-            room:"NodeJS 단톡방",
-            members:[user._id],
-        },
-    ])
-    .then(()=>res.send("ok"))
-    .catch((err)=>res.send(err));
-});
-
-app.get("/findUser",authenticateToken,async(req,res)=>{
+app.get("/user",authenticateToken,async(req,res)=>{
     const roomId= querystring.parse(url.parse(req.url).query).roomId;
 
     const user=await User.findOne({id:req.userId._userId});
@@ -95,7 +73,7 @@ app.post("/join",async(req,res)=>{
     res.json({ok:true});
 })
 
-app.post("/rooms",authenticateToken,async(req,res)=>{
+app.get("/rooms",authenticateToken,async(req,res)=>{
     Room.find({members:req.userId.userId})
         .populate('members')
         .exec()
@@ -112,6 +90,31 @@ app.post("/createRoom",authenticateToken,async(req,res)=>{
     const roomId=await roomController.createRoom(req.body.roomName,[req.userId.userId]);
     if(!roomId) res.status(500).send("/createRoom create error");
     res.json({ok:true,roomId:roomId});
+})
+// req => loginId or phoneNumber
+app.get("/user/search",async(req,res)=>{
+    const loginId=req.body.loginId;
+    const phoneNumber=req.body.phoneNumber;
+    const user="";
+    if(loginId){
+        user=userController.findByLoginId(loginId);
+    }else{
+        user=userController.findByPhoneNumber(phoneNumber);
+    }
+    res.json({user:user});
+});
+// req=> friendId,token(userId)
+// res => message={ok,duplicate,error}
+app.post("/friend/request",authenticateToken,async(req,res)=>{
+    const user=await User.findById(req.userId.userId);
+    if(!user.friends.includes(req.body.friendId)){
+        res.json({message:"duplication"})
+    }
+    const friend=await User.findById(req.body.friendId);
+
+    user.friends.push(friend._id);
+
+    res.json({message:"ok"});
 })
 mongoose.connect(process.env.DB).then(()=>console.log("database connected"));
 

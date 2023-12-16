@@ -22,6 +22,16 @@ const userSchema=new mongoose.Schema({
     rooms:[{
         type:mongoose.Schema.ObjectId,
         ref:"Room"
+    }],
+    phoneNumber:{
+        type:String,
+    },
+    profileImg:{
+        type:String,
+    },
+    friends:[{
+        type:mongoose.Schema.ObjectId,
+        ref:"User",
     }]
 },
 {timestamps:true});

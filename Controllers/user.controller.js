@@ -36,5 +36,12 @@ userController.changeSocketId=async(socketId,userId)=>{
 
     }
 }
+userController.findByLoginId=async(loginId)=>{
+    return await User.findOne({loginId:loginId})
+}
+
+userController.findByPhoneNumber=async (phoneNumber)=>{
+    return await User.findOne({phoneNumber:phoneNumber});
+}
 
 module.exports=userController

@@ -6,7 +6,7 @@ roomController.getAllRooms=async()=>{
 }
 
 roomController.createRoom=async(roomName,members)=>{
-
+    
     const room=new Room({
         roomName:roomName,
         members:members,
