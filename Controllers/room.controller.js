@@ -5,10 +5,9 @@ roomController.getAllRooms=async()=>{
     return roomList;
 }
 
-roomController.createRoom=async(roomName,members)=>{
-    
+roomController.createRoom=async(members)=>{
+
     const room=new Room({
-        roomName:roomName,
         members:members,
     })
 
@@ -39,6 +38,62 @@ roomController.leaveRoom=async(user)=>{
 
     room.members.remove(user._id);
     await room.save();
+}
+
+// return =>room(room의 data,user(userId의 데이터 제외),chat)
+roomController.findAllRoom=async(userId)=>{
+    Room.aggregate([
+        //userId를 포함하는 members를 가진 데이터
+        {$match:{members:{$in:[userId]}}},
+
+        //roomId로 조인
+        {
+            $lookup:{
+                from:"chats",
+                localField:"_id",
+                foreignField:"roomId",
+                as:"chats"
+            }
+        },
+        //chats가 배열이 아닌 단일 필드로 만들어짐
+        //즉 하나의 chats를 가진 room들로 변환
+        {$unwind:"$chats"},
+        {$sort:{"chats.createAt":-1}},
+
+        //roomId로 다시 그룹화 시킴
+        //이떄 room은 첫번째 chat만을 가지게 됨
+        {
+            $group:{
+                _id:"$_id",
+                room:{$first:"$$ROOT"},
+                chat:{$first:"$chats"}
+            }
+        },
+        {
+            $lookup:{
+                from:"users",
+                localField:"room.members",
+                foreignField:"_id",
+                as:"members"
+
+            }
+        },
+        {
+            $project:{
+                "room.name":1,
+                "chat":1,
+                "members":{
+                    $filter:{
+                        input:"$members",
+                        as:"member",
+                        cond:{$ne:["$$member._id",userId]}
+                    }
+                }
+            }
+        }
+
+
+    ]).exec();
 }
 
 module.exports=roomController;

@@ -11,15 +11,23 @@ module.exports=function(io){
     //io ~~~~
     io.on("connection",async(socket)=>{
         function getUserIdFromToken(token){
-            jwt.verify(token,process.env.JWT_SECRET_KEY(),(err,data)=>{
-                if(err)console.log("err=",err);
-                else{
-                    return data.userId;
-                }
-            })
+            return new Promise((resolve,reject)=>{
+                jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
+                    if(err){
+                        console.log("err=",err);
+                        reject(err);
+                    }
+                    else{
+                        console.log("method userId=",data.userId);
+                        resolve(data.userId);
+                    }
+                })
+            });
         }
         socket.on("saveSocketId",async(token,cb)=>{
-            let userId=getUserIdFromToken(token);
+
+            let userId=await getUserIdFromToken(token);
+
             await userController.changeSocketId(socket.id,userId);
 
             const u=await User.findOne({_id:userId});
@@ -104,21 +112,6 @@ module.exports=function(io){
             }
         });
 
-
-        socket.on("createRoom",async(token,roomName,members,cb)=>{
-            try{ 
-                let userId=getUserIdFromToken(token);
-                members.push(userId);
-                
-                const roomId=await roomController.createRoom(roomName,members);
-                const system=makeSystemUser(roomId);
-                const chat=await chatController.saveChat(`채팅방이 생성되었습니다.`,system);
-
-                cb({ok:true,roomId:roomId});
-            }catch(err){
-                cb({ok:false,error:err});
-            }
-        })
 
 
         socket.on("disconnect",()=>{

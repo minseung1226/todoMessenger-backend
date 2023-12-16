@@ -55,7 +55,6 @@ app.post("/login",async(req,res)=>{
         res.json({ok:false});
     }
     else{
-        const user2=await User.findOne({_id:user._id});
         const token=jwt.sign({userId:user.id},process.env.JWT_SECRET_KEY,{expiresIn:'1h'});
         res.json({ok:true,token:token});
     }
@@ -63,7 +62,8 @@ app.post("/login",async(req,res)=>{
 
 app.post("/idDuplication",async(req,res)=>{
 
-    const user=await User.findOne({userId:req.body.userId});
+    const user=await User.findOne({userId:req.body.loginId});
+    console.log("user=",user);
     res.json({ok:user?false:true});
 })
 app.post("/join",async(req,res)=>{
@@ -74,20 +74,45 @@ app.post("/join",async(req,res)=>{
 })
 
 app.get("/rooms",authenticateToken,async(req,res)=>{
-    Room.find({members:req.userId.userId})
-        .populate('members')
-        .exec()
-        .then((rooms)=>{
-         
-            res.json({rooms:rooms})})
-        .catch(err=>{
-            console.error(err);
-            res.status(500).send("/rooms error")})
+    try{
+        const roomAndUserAndChat=await roomController.findAllRoom(req.userId.userId);
+        console.log("rooms=",roomAndUserAndChat);
+        res.json({ok:true,chatRoomsInfo:roomAndUserAndChat});
+    }catch(err){
+        res.status(500).send("/rooms failed to retrieve chat room list")
+    }
+    
 })
 
-app.post("/createRoom",authenticateToken,async(req,res)=>{
+// 인증번호 발송
+//req => phoneNumber
+app.post("/sendCode",async(req,res)=>{
+    try{
+        const randomNumber = Math.floor(Math.random() * 9000) + 1000;
+        res.json({code:randomNumber});
+        console.log("code=",randomNumber);
+    }catch(err){
+        console.log("err=",err);
+    }
+})
 
-    const roomId=await roomController.createRoom(req.body.roomName,[req.userId.userId]);
+//방생성 모든 친구 조회
+//현재코드 : 모든 유저 조회 (수정필요)
+app.get("/friends",authenticateToken,async(req,res)=>{
+    try{
+        const friends=await User.find();
+        res.json({friends:friends});    
+    }catch(err){
+        console.log("err=",err);
+    }
+    
+})
+
+
+app.post("/room",authenticateToken,async(req,res)=>{
+    friends=req.body.friends;
+    friends.push(req.userId.userId);
+    const roomId=await roomController.createRoom(friends);
     if(!roomId) res.status(500).send("/createRoom create error");
     res.json({ok:true,roomId:roomId});
 })
