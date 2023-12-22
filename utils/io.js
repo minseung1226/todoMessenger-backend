@@ -18,6 +18,7 @@ module.exports=function(io){
                         reject(err);
                     }
                     else{
+                        console.log("data=",data);
                         console.log("method userId=",data.userId);
                         resolve(data.userId);
                     }
@@ -46,10 +47,9 @@ module.exports=function(io){
         
         socket.on("getAllChatsAndUser",async(roomId,token,cb)=>{
             try{
-                let userId=getUserIdFromToken(token);
+                let userId=getUserIdFromToken(token).userId;
                 const user=await User.findOne({_id:userId});
                 const chats=await chatController.findChatsByRoomId(roomId);
-                console.log("chats=",chats);
                 cb({chats:chats,user:user});
             }catch(err){
                 console.log(err.message);
@@ -68,7 +68,7 @@ module.exports=function(io){
                     user:{id:null,name:`system`},
                 };
                 io.to(user.room.toString()).emit("message",welcomeMessage);
-                //io.emit("rooms",await roomController.getAllRooms());
+              
                 cb({ok:true});
             }catch(error){
                 cb({ok:false,error:error.message});
@@ -76,7 +76,9 @@ module.exports=function(io){
         });
 
         // room List 반환
-        socket.emit("rooms",await roomController.getAllRooms());
+        // socket.emit("rooms",async(token,cb)=>{
+        //     const userId=await getUserIdFromToken(token);
+        // })
 
         // 메시지 전달
         socket.on("sendMessage",async(receivedMessage,roomId,cb)=>{

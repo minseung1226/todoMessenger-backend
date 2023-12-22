@@ -57,7 +57,10 @@ roomController.findAllRoom=async(userId)=>{
         },
         //chats가 배열이 아닌 단일 필드로 만들어짐
         //즉 하나의 chats를 가진 room들로 변환
-        {$unwind:"$chats"},
+        {$unwind:{
+            path:"$chats",
+            preserveNullAndEmptyArrays:true
+        }},
         {$sort:{"chats.createAt":-1}},
 
         //roomId로 다시 그룹화 시킴
