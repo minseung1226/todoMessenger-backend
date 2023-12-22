@@ -75,10 +75,10 @@ app.post("/join",async(req,res)=>{
 
 app.get("/rooms",authenticateToken,async(req,res)=>{
     try{
-        console.log(req.userId.userId);
 
         const roomAndUserAndChat=await roomController.findAllRoom(req.userId.userId);
         console.log("rooms=",roomAndUserAndChat);
+        //console.log("rooms=",JSON.stringify(roomAndUserAndChat, null, 2));
         res.json({ok:true,chatRoomsInfo:roomAndUserAndChat});
     }catch(err){
         console.log(err);

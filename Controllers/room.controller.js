@@ -1,4 +1,5 @@
 const Room=require("../Models/room");
+const mongoose=require("mongoose");
 const roomController={};
 roomController.getAllRooms=async()=>{
     const roomList=Room.find({});
@@ -41,8 +42,9 @@ roomController.leaveRoom=async(user)=>{
 }
 
 // return =>room(room의 data,user(userId의 데이터 제외),chat)
-roomController.findAllRoom=async(userId)=>{
-    Room.aggregate([
+roomController.findAllRoom=async(userId1)=>{
+    const userId=new mongoose.Types.ObjectId(userId1)
+    return Room.aggregate([
         //userId를 포함하는 members를 가진 데이터
         {$match:{members:{$in:[userId]}}},
 
@@ -83,7 +85,7 @@ roomController.findAllRoom=async(userId)=>{
         },
         {
             $project:{
-                "room.name":1,
+                "roomName":{$ifNull:["$room.roomName",""]},
                 "chat":1,
                 "members":{
                     $filter:{
