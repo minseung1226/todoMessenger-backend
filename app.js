@@ -14,6 +14,8 @@ const bcrypt=require("bcrypt");
 const url=require("url");
 const querystring = require('querystring');
 const roomController = require("./Controllers/room.controller");
+const ErrorTypes=require("./errorTypes/ErrorTypes");
+const { error } = require("console");
 app.use(cors());
 app.use(express.json());
 app.use(session({
@@ -63,7 +65,6 @@ app.post("/login",async(req,res)=>{
 app.post("/idDuplication",async(req,res)=>{
 
     const user=await User.findOne({userId:req.body.loginId});
-    console.log("user=",user);
     res.json({ok:user?false:true});
 })
 app.post("/join",async(req,res)=>{
@@ -77,7 +78,6 @@ app.get("/rooms",authenticateToken,async(req,res)=>{
     try{
 
         const roomAndUserAndChat=await roomController.findAllRoom(req.userId.userId);
-        console.log("rooms=",roomAndUserAndChat);
         //console.log("rooms=",JSON.stringify(roomAndUserAndChat, null, 2));
         res.json({ok:true,chatRoomsInfo:roomAndUserAndChat});
     }catch(err){
@@ -103,7 +103,8 @@ app.post("/sendCode",async(req,res)=>{
 //현재코드 : 모든 유저 조회 (수정필요)
 app.get("/friends",authenticateToken,async(req,res)=>{
     try{
-        const friends=userController.findFriends(req.userId.userId);
+        const friends=await userController.findFriends(req.userId.userId);
+        console.log("friends=",friends);
         res.json({friends:friends});    
     }catch(err){
         console.log("err=",err);
@@ -131,18 +132,30 @@ app.get("/user/search",async(req,res)=>{
     }
     res.json({user:user});
 });
-// req=> friendId,token(userId)
-// res => message={ok,duplicate,error}
-app.post("/friend/request",authenticateToken,async(req,res)=>{
-    const user=await User.findById(req.userId.userId);
-    if(!user.friends.includes(req.body.friendId)){
-        res.json({message:"duplication"})
+
+app.get("/user",authenticateToken,async(req,res)=>{
+    try{
+       const friend= await userController.findFriend(req.userId.userId,req.body.friendLoginId);
+        res.json({user:friend});
+    }catch(err){
+        if(err.type===ErrorTypes.ALREADY_FRIEND){
+            res.json({errorMessage:"이미 친구로 등록된 사용자 입니다."})
+        }
+        if(err.type===ErrorTypes.FRIEND_NOT_FOUND){
+            res.json({errorMessage:"잘못된 id 입니다."})
+        }
+        res.status(500).send("/user/search error");
     }
-    const friend=await User.findById(req.body.friendId);
+});
 
-    user.friends.push(friend._id);
-
-    res.json({message:"ok"});
+app.patch("/friend/request",authenticateToken,async(req,res)=>{
+    try{
+        await userController.addFriend(req.userId.userId,req.body.friendId);
+        res.json({ok:true});
+    }catch(err){
+        console.log("/friend/request error");
+        throw err;
+    }
 })
 mongoose.connect(process.env.DB).then(()=>console.log("database connected"));
 
