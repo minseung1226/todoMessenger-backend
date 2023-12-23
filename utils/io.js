@@ -3,28 +3,22 @@ const roomController = require("../Controllers/room.controller");
 const userController=require("../Controllers/user.controller")
 const jwt=require("jsonwebtoken");
 const User=require("../Models/user")
-module.exports=function(io){
-
-
-
-    
+function getUserIdFromToken(token){
+    return new Promise((resolve,reject)=>{
+        jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(data.userId);
+            }
+        })
+    });
+}
+module.exports=function(io){    
     //io ~~~~
     io.on("connection",async(socket)=>{
-        function getUserIdFromToken(token){
-            return new Promise((resolve,reject)=>{
-                jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
-                    if(err){
-                        console.log("err=",err);
-                        reject(err);
-                    }
-                    else{
-                        console.log("data=",data);
-                        console.log("method userId=",data.userId);
-                        resolve(data.userId);
-                    }
-                })
-            });
-        }
+        
         socket.on("saveSocketId",async(token,cb)=>{
 
             let userId=await getUserIdFromToken(token);
@@ -39,15 +33,12 @@ module.exports=function(io){
         
 
 
-        socket.emit("getGroup",async(token,cb)=>{
-            const userId=getUserIdFromToken(token);
-            
-        })
+
 
         
         socket.on("getAllChatsAndUser",async(roomId,token,cb)=>{
             try{
-                let userId=getUserIdFromToken(token).userId;
+                let userId= await getUserIdFromToken(token);
                 const user=await User.findOne({_id:userId});
                 const chats=await chatController.findChatsByRoomId(roomId);
                 cb({chats:chats,user:user});
@@ -83,9 +74,11 @@ module.exports=function(io){
         // 메시지 전달
         socket.on("sendMessage",async(receivedMessage,roomId,cb)=>{
             try{
-               const user=await User.findOne({token:socket.id,rooms:{$in:[roomId]}});
+
+               const user=await User.findOne({socketId:socket.id});
                 if(user){
-                    const message=await chatController.saveChat(receivedMessage,user);
+                    const message=await chatController.saveChat(receivedMessage,user,roomId);
+                    socket.join(roomId);
                     io.to(roomId).emit("message",message);
                     return cb({ok:true});
                 }

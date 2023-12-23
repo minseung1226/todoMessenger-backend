@@ -41,15 +41,16 @@ function authenticateToken(req,res,next){
 }
 
 
-app.get("/user",authenticateToken,async(req,res)=>{
-    const roomId= querystring.parse(url.parse(req.url).query).roomId;
+// app.get("/user",authenticateToken,async(req,res)=>{
+//     console.log("실행");
+//     const roomId= querystring.parse(url.parse(req.url).query).roomId;
 
-    const user=await User.findOne({id:req.userId._userId});
-    user.rooms.push(roomId);
-    await user.save();
+//     const user=await User.findOne({id:req.userId._userId});
+//     user.rooms.push(roomId);
+//     await user.save();
 
-    res.json({user:user});
-});
+//     res.json({user:user});
+// });
 
 app.post("/login",async(req,res)=>{
     const user=await User.findOne({loginId:req.body.loginId});
@@ -104,7 +105,6 @@ app.post("/sendCode",async(req,res)=>{
 app.get("/friends",authenticateToken,async(req,res)=>{
     try{
         const friends=await userController.findFriends(req.userId.userId);
-        console.log("friends=",friends);
         res.json({friends:friends});    
     }catch(err){
         console.log("err=",err);
@@ -117,6 +117,7 @@ app.post("/room",authenticateToken,async(req,res)=>{
     friends=req.body.friends;
     friends.push(req.userId.userId);
     const roomId=await roomController.createRoom(friends);
+    const room = await Room.findOne({_id:roomId});
     if(!roomId) res.status(500).send("/createRoom create error");
     res.json({ok:true,roomId:roomId});
 })
@@ -134,18 +135,21 @@ app.get("/user/search",async(req,res)=>{
 });
 
 app.get("/user",authenticateToken,async(req,res)=>{
+
     try{
-       const friend= await userController.findFriend(req.userId.userId,req.body.friendLoginId);
+       const friend= await userController.findFriend(req.userId.userId,req.query.friendLoginId);
         res.json({user:friend});
     }catch(err){
         if(err.type===ErrorTypes.ALREADY_FRIEND){
             res.json({errorMessage:"이미 친구로 등록된 사용자 입니다."})
         }
-        if(err.type===ErrorTypes.FRIEND_NOT_FOUND){
+        else if(err.type===ErrorTypes.FRIEND_NOT_FOUND){
             res.json({errorMessage:"잘못된 id 입니다."})
         }
-        res.status(500).send("/user/search error");
-    }
+        else{
+            res.status(500).send("/user/search error");
+        }
+        }
 });
 
 app.patch("/friend/request",authenticateToken,async(req,res)=>{

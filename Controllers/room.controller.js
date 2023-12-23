@@ -42,9 +42,10 @@ roomController.leaveRoom=async(user)=>{
 }
 
 // return =>room(room의 data,user(userId의 데이터 제외),chat)
-roomController.findAllRoom=async(userId1)=>{
-    const userId=new mongoose.Types.ObjectId(userId1)
-    return Room.aggregate([
+roomController.findAllRoom=async(strUserId)=>{
+    const userId=new mongoose.Types.ObjectId(strUserId);
+
+    return await Room.aggregate([
         //userId를 포함하는 members를 가진 데이터
         {$match:{members:{$in:[userId]}}},
 

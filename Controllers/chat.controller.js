@@ -2,7 +2,7 @@ const Chat=require("../Models/chat");
 
 const chatController={}
 
-chatController.saveChat=async(message,user)=>{
+chatController.saveChat=async(message,user,roomId)=>{
 
     const newMessage=new Chat({
         chat:message,
@@ -10,7 +10,7 @@ chatController.saveChat=async(message,user)=>{
             id:user._id,
             name:user.name,
         },
-        room:user.room
+        room:roomId
         
     });
 
