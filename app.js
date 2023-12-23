@@ -103,7 +103,7 @@ app.post("/sendCode",async(req,res)=>{
 //현재코드 : 모든 유저 조회 (수정필요)
 app.get("/friends",authenticateToken,async(req,res)=>{
     try{
-        const friends=await User.find();
+        const friends=userController.findFriends(req.userId.userId);
         res.json({friends:friends});    
     }catch(err){
         console.log("err=",err);

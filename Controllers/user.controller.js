@@ -44,4 +44,14 @@ userController.findByPhoneNumber=async (phoneNumber)=>{
     return await User.findOne({phoneNumber:phoneNumber});
 }
 
+userController.findFriends=async(userId)=>{
+    try{
+        const user=await User.findOne({id:userId});
+        return await User.find({_id:{$in:user.friends}}).select('id name');
+    }catch(err){
+        console.log("find friends Error");
+        throw err;
+    }
+}
+
 module.exports=userController
