@@ -75,18 +75,18 @@ app.post("/join",async(req,res)=>{
     res.json({ok:true});
 })
 
-app.get("/rooms",authenticateToken,async(req,res)=>{
-    try{
+// app.get("/rooms",authenticateToken,async(req,res)=>{
+//     try{
 
-        const roomAndUserAndChat=await roomController.findAllRoom(req.userId.userId);
-        //console.log("rooms=",JSON.stringify(roomAndUserAndChat, null, 2));
-        res.json({ok:true,chatRoomsInfo:roomAndUserAndChat});
-    }catch(err){
-        console.log(err);
-        res.status(500).send("/rooms failed to retrieve chat room list")
-    }
+//         const roomAndUserAndChat=await roomController.findAllRoom(req.userId.userId);
+//         //console.log("rooms=",JSON.stringify(roomAndUserAndChat, null, 2));
+//         res.json({ok:true,chatRoomsInfo:roomAndUserAndChat});
+//     }catch(err){
+//         console.log(err);
+//         res.status(500).send("/rooms failed to retrieve chat room list")
+//     }
     
-})
+// })
 
 // 인증번호 발송
 //req => phoneNumber
@@ -100,17 +100,7 @@ app.post("/sendCode",async(req,res)=>{
     }
 })
 
-//방생성 모든 친구 조회
-//현재코드 : 모든 유저 조회 (수정필요)
-app.get("/friends",authenticateToken,async(req,res)=>{
-    try{
-        const friends=await userController.findFriends(req.userId.userId);
-        res.json({friends:friends});    
-    }catch(err){
-        console.log("err=",err);
-    }
-    
-})
+
 
 
 app.post("/room",authenticateToken,async(req,res)=>{
@@ -155,7 +145,9 @@ app.get("/user",authenticateToken,async(req,res)=>{
 app.patch("/friend/request",authenticateToken,async(req,res)=>{
     try{
         await userController.addFriend(req.userId.userId,req.body.friendId);
+        
         res.json({ok:true});
+
     }catch(err){
         console.log("/friend/request error");
         throw err;

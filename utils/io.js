@@ -2,7 +2,9 @@ const chatController = require("../Controllers/chat.controller");
 const roomController = require("../Controllers/room.controller");
 const userController=require("../Controllers/user.controller")
 const jwt=require("jsonwebtoken");
-const User=require("../Models/user")
+const User=require("../Models/user");
+
+// JWT TOKEN userId로 변환
 function getUserIdFromToken(token){
     return new Promise((resolve,reject)=>{
         jwt.verify(token,process.env.JWT_SECRET_KEY,(err,data)=>{
@@ -31,19 +33,45 @@ module.exports=function(io){
 
         });
         
+        // 친구 목록 조회
+        socket.on("friendList",async(token,cb)=>{
+            try{
+                const userId=await getUserIdFromToken(token);
+                const friendList=await userController.findFriends(userId);
+                cb({friendList:friendList});
+            }catch(err){
+                console.log("friendList inquiry error");
+                cb({err:err});
+                throw err;
+            }
+        })
+
+        //채팅방 목록 조회
+        socket.on("roomList",async(token,cb)=>{
+            try{
+                const userId=await getUserIdFromToken(token);
+                const chatRoomListInfo=await roomController.findAllRoom(userId);
+
+                cb({chatRoomListInfo:chatRoomListInfo});
+            }catch(err){
+                console.log("roomList inquiry err");
+            }
+        })
 
 
 
-
-        
+        // 채팅방 목록 조회
         socket.on("getAllChatsAndUser",async(roomId,token,cb)=>{
             try{
+
                 let userId= await getUserIdFromToken(token);
                 const user=await User.findOne({_id:userId});
                 const chats=await chatController.findChatsByRoomId(roomId);
                 cb({chats:chats,user:user});
             }catch(err){
+                cb({err:err});
                 console.log(err.message);
+
             }
         })
 
@@ -66,12 +94,7 @@ module.exports=function(io){
             }
         });
 
-        // room List 반환
-        // socket.emit("rooms",async(token,cb)=>{
-        //     const userId=await getUserIdFromToken(token);
-        // })
 
-        // 메시지 전달
         socket.on("sendMessage",async(receivedMessage,roomId,cb)=>{
             try{
 
