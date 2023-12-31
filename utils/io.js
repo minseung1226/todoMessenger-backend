@@ -21,17 +21,6 @@ module.exports=function(io){
     //io ~~~~
     io.on("connection",async(socket)=>{
         
-        socket.on("saveSocketId",async(token,cb)=>{
-
-            let userId=await getUserIdFromToken(token);
-
-            await userController.changeSocketId(socket.id,userId);
-
-            const u=await User.findOne({_id:userId});
-
-            cb({ok:true});
-
-        });
         
         // 친구 목록 조회
         socket.on("friendList",async(token,cb)=>{
@@ -75,30 +64,10 @@ module.exports=function(io){
             }
         })
 
-        // 방 입장(입장시 입장 메시지 전달)
-        socket.on("joinRoom",async(rid,cb)=>{
+        socket.on("sendMessage",async(receivedMessage,roomId,token,cb)=>{
             try{
-                const user= await userController.CheckUser(socket.id);
-                await roomController.joinRoom(rid,user);
-
-                socket.join(user.room.toString());
-                const welcomeMessage={
-                    chat:`${user.name} is joined to this room`,
-                    user:{id:null,name:`system`},
-                };
-                io.to(user.room.toString()).emit("message",welcomeMessage);
-              
-                cb({ok:true});
-            }catch(error){
-                cb({ok:false,error:error.message});
-            }
-        });
-
-
-        socket.on("sendMessage",async(receivedMessage,roomId,cb)=>{
-            try{
-
-               const user=await User.findOne({socketId:socket.id});
+                const userId=await getUserIdFromToken(token);
+               const user=await User.findOne({_id:userId});
                 if(user){
                     const message=await chatController.saveChat(receivedMessage,user,roomId);
                     socket.join(roomId);
@@ -110,26 +79,6 @@ module.exports=function(io){
                 cb({ok:false,error:err.message});
             }
         });
-
-        socket.on("leaveRoom",async(_,cb)=>{
-            try{
-                const user= await userController.CheckUser(socket.id);
-                await roomController.leaveRoom(user);
-                const leaveMessage={
-                    chat:`${user.name} left this room`,
-                    user:{id:null,name:"system"},
-                };
-
-                socket.broadcast.to(user.room.toString()).emit("message",leaveMessage);
-
-                io.emit("rooms",await roomController.getAllRooms());
-                socket.leave(user.room.toString());
-                cb({ok:true});
-            }catch(error){
-                cb({ok:false,message:error.message});
-            }
-        });
-
 
 
         socket.on("disconnect",()=>{
