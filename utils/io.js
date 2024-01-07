@@ -52,7 +52,8 @@ module.exports=function(io){
         // 채팅방 목록 조회
         socket.on("getAllChatsAndUser",async(roomId,token,cb)=>{
             try{
-
+                
+                console.log("roomId="+roomId+" token="+token);
                 let userId= await getUserIdFromToken(token);
                 const user=await User.findOne({_id:userId});
                 const chats=await chatController.findChatsByRoomId(roomId);
@@ -60,10 +61,29 @@ module.exports=function(io){
             }catch(err){
                 cb({err:err});
                 console.log(err.message);
-
             }
         })
 
+        //친구 추가
+        socket.on("addFriend",async(token,friendId,cb)=>{
+            try{
+                const userId=await getUserIdFromToken(token);
+                await userController.addFriend(userId,friendId);
+                
+                const user=await User.findOne({_id:friendId});
+                const friend={
+                    id:user._id,
+                    name:user.name,
+                    online:user.online,
+                    profileImg:user.profileImg
+                }
+                socket.emit("newFriend",friend);
+                cb({ok:true});
+            }catch(err){
+                cb({err:err});
+                console.log("add friend error");
+            }
+        })
         socket.on("sendMessage",async(receivedMessage,roomId,token,cb)=>{
             try{
                 const userId=await getUserIdFromToken(token);
@@ -79,6 +99,17 @@ module.exports=function(io){
                 cb({ok:false,error:err.message});
             }
         });
+
+        socket.on("findUser",async(token,cb)=>{
+            try{
+                const userId=await getUserIdFromToken(token);
+                const user = await User.findOne({_id:userId});
+                cb({user:user});
+            }catch(err){
+                cb({err:err});
+                console.log("socket find user error");
+            }
+        })
 
 
         socket.on("disconnect",()=>{

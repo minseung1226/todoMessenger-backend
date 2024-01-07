@@ -12,9 +12,6 @@ const userSchema=new mongoose.Schema({
         required:[true,"User must type name"],
         
     },
-    socketId:{
-        type:String,
-    },
     online:{
         type:Boolean,
         default:false,
@@ -32,7 +29,10 @@ const userSchema=new mongoose.Schema({
     friends:[{
         type:mongoose.Schema.ObjectId,
         ref:"User",
-    }]
+    }],
+    online:{
+        type:Boolean,
+    }
 },
 {timestamps:true});
 module.exports=mongoose.model("User",userSchema);

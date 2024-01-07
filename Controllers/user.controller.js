@@ -53,14 +53,14 @@ userController.addFriend=async(userId,friendId)=>{
     await user.save();
 }
 
-userController.changeSocketId=async(socketId,userId)=>{
-    const user=await User.findOne({_id:userId});
-    if(!user) console.log("user not found");
-    else{
-
-        user.socketId=socketId;
+userController.toggleOnlineStatus=async(userId,status)=>{
+    try{
+        const user=await User.findOne({_id:userId});
+        user.online=status;
         await user.save();
-
+    }catch(err){
+        console.log("change online status error");
+        throw err;
     }
 }
 userController.findByLoginId=async(loginId)=>{

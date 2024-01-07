@@ -41,25 +41,27 @@ function authenticateToken(req,res,next){
 }
 
 
-// app.get("/user",authenticateToken,async(req,res)=>{
-//     console.log("실행");
-//     const roomId= querystring.parse(url.parse(req.url).query).roomId;
-
-//     const user=await User.findOne({id:req.userId._userId});
-//     user.rooms.push(roomId);
-//     await user.save();
-
-//     res.json({user:user});
-// });
 
 app.post("/login",async(req,res)=>{
     const user=await User.findOne({loginId:req.body.loginId});
-    if(!user || !await bcrypt.compare(req.body.pw,user.pw)){
+    if(!user || !bcrypt.compare(req.body.pw,user.pw)){
         res.json({ok:false});
     }
     else{
+        await userController.toggleOnlineStatus(user._id,true);
         const token=jwt.sign({userId:user.id},process.env.JWT_SECRET_KEY,{expiresIn:'1h'});
         res.json({ok:true,token:token});
+    }
+})
+
+app.patch("/logout",authenticateToken,async(req,res)=>{
+    try{
+        console.log("옴");
+        await userController.toggleOnlineStatus(req.userId.userId,false);
+        res.json({ok:true});
+    }catch(err){
+        console.log("logout error");
+        res.status(500).send("logout error");
     }
 })
 
@@ -75,18 +77,7 @@ app.post("/join",async(req,res)=>{
     res.json({ok:true});
 })
 
-// app.get("/rooms",authenticateToken,async(req,res)=>{
-//     try{
 
-//         const roomAndUserAndChat=await roomController.findAllRoom(req.userId.userId);
-//         //console.log("rooms=",JSON.stringify(roomAndUserAndChat, null, 2));
-//         res.json({ok:true,chatRoomsInfo:roomAndUserAndChat});
-//     }catch(err){
-//         console.log(err);
-//         res.status(500).send("/rooms failed to retrieve chat room list")
-//     }
-    
-// })
 
 // 인증번호 발송
 //req => phoneNumber
@@ -125,7 +116,7 @@ app.get("/user/search",async(req,res)=>{
 });
 
 app.get("/user",authenticateToken,async(req,res)=>{
-
+    
     try{
        const friend= await userController.findFriend(req.userId.userId,req.query.friendLoginId);
         res.json({user:friend});
