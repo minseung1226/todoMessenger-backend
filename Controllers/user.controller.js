@@ -75,7 +75,7 @@ userController.findFriends=async(userId)=>{
     try{
         const user=await User.findOne({_id:userId});
 
-        return await User.find({_id:{$in:user.friends}}).select('id name');
+        return await User.find({_id:{$in:user.friends}}).select('id name online profileImg');
     }catch(err){
         console.log("find friends Error");
         throw err;

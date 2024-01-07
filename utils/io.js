@@ -20,13 +20,21 @@ function getUserIdFromToken(token){
 module.exports=function(io){    
     //io ~~~~
     io.on("connection",async(socket)=>{
-        
+        socket.on("userIdjoin",async(token,cb)=>{
+            console.log("옴");
+            const userId=getUserIdFromToken(token);
+            socket.join(userId);
+            console.log("userId=",userId);
+            cb({ok:true});
+        })
         
         // 친구 목록 조회
         socket.on("friendList",async(token,cb)=>{
             try{
                 const userId=await getUserIdFromToken(token);
+                socket.to(userId).emit("aa",{data:"시발"});
                 const friendList=await userController.findFriends(userId);
+               
                 cb({friendList:friendList});
             }catch(err){
                 console.log("friendList inquiry error");
@@ -77,7 +85,10 @@ module.exports=function(io){
                     online:user.online,
                     profileImg:user.profileImg
                 }
-                socket.emit("newFriend",friend);
+                console.log("Emitting 'newFriend' event", { newFriend: friend });
+                socket.to(userId).emit("newFriend",{newFriend:friend});
+                console.log("Emitted 'newFriend' event");
+                
                 cb({ok:true});
             }catch(err){
                 cb({err:err});

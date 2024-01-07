@@ -56,7 +56,6 @@ app.post("/login",async(req,res)=>{
 
 app.patch("/logout",authenticateToken,async(req,res)=>{
     try{
-        console.log("옴");
         await userController.toggleOnlineStatus(req.userId.userId,false);
         res.json({ok:true});
     }catch(err){
