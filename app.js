@@ -114,6 +114,7 @@ app.get("/user/search",async(req,res)=>{
     res.json({user:user});
 });
 
+// 사용자 검색 
 app.get("/user",authenticateToken,async(req,res)=>{
     
     try{

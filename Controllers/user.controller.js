@@ -16,7 +16,7 @@ userController.checkUser=async(loginId,pw)=>{
 
 userController.findFriend=async(userId,friendLoginId)=>{
     const friend=await User.findOne({loginId:friendLoginId});
-    if(!friend){
+    if(!friend || userId===friend._id.toString()){
         const error=new Error("friend_not_found");
         error.type=ErrorTypes.FRIEND_NOT_FOUND
         throw error;

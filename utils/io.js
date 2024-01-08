@@ -20,12 +20,10 @@ function getUserIdFromToken(token){
 module.exports=function(io){    
     //io ~~~~
     io.on("connection",async(socket)=>{
-        socket.on("userIdjoin",async(token,cb)=>{
-            console.log("옴");
-            const userId=getUserIdFromToken(token);
+        socket.on("userIdJoin",async(token)=>{
+
+            const userId= await getUserIdFromToken(token);
             socket.join(userId);
-            console.log("userId=",userId);
-            cb({ok:true});
         })
         
         // 친구 목록 조회
