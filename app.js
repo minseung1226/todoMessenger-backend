@@ -101,6 +101,8 @@ app.post("/room",authenticateToken,async(req,res)=>{
     if(!roomId) res.status(500).send("/createRoom create error");
     res.json({ok:true,roomId:roomId});
 })
+
+//사용자 검색
 // req => loginId or phoneNumber
 app.get("/user/search",async(req,res)=>{
     const loginId=req.body.loginId;

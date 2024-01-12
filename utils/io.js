@@ -3,7 +3,7 @@ const roomController = require("../Controllers/room.controller");
 const userController=require("../Controllers/user.controller")
 const jwt=require("jsonwebtoken");
 const User=require("../Models/user");
-
+const Room=require("../Models/room")
 // JWT TOKEN userId로 변환
 function getUserIdFromToken(token){
     return new Promise((resolve,reject)=>{
@@ -30,7 +30,6 @@ module.exports=function(io){
         socket.on("friendList",async(token,cb)=>{
             try{
                 const userId=await getUserIdFromToken(token);
-                socket.to(userId).emit("aa",{data:"시발"});
                 const friendList=await userController.findFriends(userId);
                
                 cb({friendList:friendList});
@@ -69,6 +68,27 @@ module.exports=function(io){
                 console.log(err.message);
             }
         })
+
+        //채팅방 생성
+        socket.on("createChatRoom",async(token,selectFriendIds,cb)=>{
+            try{
+                const userId=await getUserIdFromToken(token);
+                selectFriendIds.push(userId);
+                const users=await User.find({_id:selectFriendIds});
+                const userNames=users.map(user=>user.name).join(","); // 방이름 (이름1,이름2,이름3) 생성
+                const roomId=await roomController.createRoom(selectFriendIds,userNames);
+
+                const room=await Room.findOne({_id:roomId});
+                selectFriendIds.forEach(friendId=>{
+                    io.to(friendId).emit("newRoom",room);
+                })
+                cb({ok:true,roomId:roomId});
+            }catch(err){
+                console.log("createChatRoom error");
+                throw error;
+            }
+        })
+
 
         //친구 추가
         socket.on("addFriend",async(token,friendId,cb)=>{
