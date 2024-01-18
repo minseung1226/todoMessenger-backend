@@ -145,7 +145,7 @@ module.exports=function(io){
             console.log("user is disconnected");
         })
     });
-
+    // socket.emit("친구 추가")
 
     function makeSystemUser(roomId){
         const system={

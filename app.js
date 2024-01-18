@@ -18,6 +18,7 @@ const ErrorTypes=require("./errorTypes/ErrorTypes");
 const { error } = require("console");
 app.use(cors());
 app.use(express.json());
+app.use("/profiles",express.static("C:\\Users\\min\\Desktop\\profile_img"))
 app.use(session({
     secret:crypto.randomBytes(64).toString('hex'),
     resave:false,
