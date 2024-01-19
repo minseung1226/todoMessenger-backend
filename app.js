@@ -16,9 +16,16 @@ const querystring = require('querystring');
 const roomController = require("./Controllers/room.controller");
 const ErrorTypes=require("./errorTypes/ErrorTypes");
 const { error } = require("console");
+const multer=require("multer");
+const fs=require("fs").promises;
+const path=require("path")
+const authenticateToken=require("./utils/middlewares/authenticateToken");
+const profileImgUpdate=require("./utils/middlewares/profileImgUpdate");
+
 app.use(cors());
 app.use(express.json());
-app.use("/profiles",express.static("C:\\Users\\min\\Desktop\\profile_img"))
+
+app.use("/profiles",express.static(process.env.IMG_PATH))
 app.use(session({
     secret:crypto.randomBytes(64).toString('hex'),
     resave:false,
@@ -26,23 +33,16 @@ app.use(session({
     cookie:{secure:true}
 }));
 
-//token 검증
-function authenticateToken(req,res,next){
-    const token=req.headers.authorization?.split(' ')[1];
-
-    if(!token){
-        return res.status(401).send("not found Token");
+app.patch("/user/update",authenticateToken,profileImgUpdate,async(req,res)=>{
+    try{
+        const imgDelete=req.body.deleteImg?true:false
+        await userController.updateNameAndImg(req.userId.userId,req.body.name,req.filename,imgDelete);
+        res.json({ok:true})
+    }catch(err){
+        console.log("err=",err);
+        res.status(500).send("profile update error")
     }
-
-    jwt.verify(token,process.env.JWT_SECRET_KEY,(err,userId)=>{
-        if(err) return res.status(403).send('Invalid token');
-        req.userId=userId;
-        next();
-    })
-}
-
-
-
+})
 app.post("/login",async(req,res)=>{
     const user=await User.findOne({loginId:req.body.loginId});
     if(!user || !bcrypt.compare(req.body.pw,user.pw)){
@@ -135,6 +135,8 @@ app.get("/user",authenticateToken,async(req,res)=>{
         }
         }
 });
+
+
 
 app.patch("/friend/request",authenticateToken,async(req,res)=>{
     try{
