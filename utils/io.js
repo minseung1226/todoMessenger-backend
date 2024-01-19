@@ -149,12 +149,25 @@ module.exports = function (io) {
             io.to(userId).emit("refreshUser");
         })
 
+        socket.on("changePassword",async(token,password,cb)=>{
+            try{
+                console.log("오긴함")
+                const userId=await getUserIdFromToken(token);
+                await userController.updatePassword(userId,password);
+                cb({ok:true})
+            }catch(err){
+                console.log("password change error");
+                cb({err:err});
+            }
+        })
+
 
         socket.on("disconnect", () => {
             console.log("user is disconnected");
         })
     });
-    // socket.emit("친구 추가")
+    
+    
 
     function makeSystemUser(roomId) {
         const system = {

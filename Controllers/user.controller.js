@@ -4,6 +4,13 @@ const mongoose=require("mongoose");
 const ErrorTypes=require("../errorTypes/ErrorTypes");
 const userController={}
 
+
+userController.updatePassword=async(userId,password)=>{
+    const user=await User.findOne({_id:userId});
+    user.password=password;
+
+    await user.save();
+}
 userController.updateNameAndImg=async(userId,name,profileImg,imgDelete)=>{
 
 
