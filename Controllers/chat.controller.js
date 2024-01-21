@@ -1,32 +1,51 @@
-const Chat=require("../Models/chat");
+const { default: mongoose } = require("mongoose");
+const Chat = require("../Models/chat");
 
-const chatController={}
+const chatController = {}
 
-chatController.saveChat=async(message,user,roomId)=>{
+chatController.saveChat = async (message, user, roomId) => {
 
-    const newMessage=new Chat({
-        chat:message,
-        user:{
-            id:user._id,
-            name:user.name,
+    const newMessage = new Chat({
+        chat: message,
+        user: {
+            id: user._id,
+            name: user.name,
         },
-        room:roomId
-        
+        room: roomId
+
     });
 
     await newMessage.save();
-    return newMessage;    
+    return newMessage;
 }
 
-chatController.findChatsByRoomId=async(roomId)=>{
-    const chats=Chat.find({room:roomId})
-                    .populate('room')
-                    .sort({createdAt:1})
-                    .then(chats=>{
-                        return chats;
-                    })
-                    .catch(err=>console.log(err.message));
+chatController.findAlertChat = async (chatId) => {
+    const objectId = new mongoose.Types.ObjectId(chatId);
+
+    return Chat.findOne({_id:objectId})
+                .populate(
+                    {
+                        path:"room",
+                        select:"_id roomName",
+                        populate:{
+                            path:"members",
+                            select:"profileImg",
+                            options:{limit:4}
+                        }
+                    }
+                )
+                .select("_id chat room");
+
+}
+chatController.findChatsByRoomId = async (roomId) => {
+    const chats = Chat.find({ room: roomId })
+        .populate('room')
+        .sort({ createdAt: 1 })
+        .then(chats => {
+            return chats;
+        })
+        .catch(err => console.log(err.message));
     return chats;
 }
 
-module.exports=chatController;
+module.exports = chatController;

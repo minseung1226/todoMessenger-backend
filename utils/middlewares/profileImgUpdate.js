@@ -7,7 +7,6 @@ const storage=multer.diskStorage({
     },
     filename:async function(req,file,cb){
 
-        console.log("실행");
         const filename=req.userId.userId+path.extname(file.originalname);
         const filePath=path.join(process.env.IMG_PATH,filename);
         req.filename=filename

@@ -3,7 +3,8 @@ const roomController = require("../Controllers/room.controller");
 const userController = require("../Controllers/user.controller")
 const jwt = require("jsonwebtoken");
 const User = require("../Models/user");
-const Room = require("../Models/room")
+const Room = require("../Models/room");
+const { default: mongoose } = require("mongoose");
 // JWT TOKEN userId로 변환
 function getUserIdFromToken(token) {
     return new Promise((resolve, reject) => {
@@ -25,7 +26,13 @@ module.exports = function (io) {
 
             const userId = await getUserIdFromToken(token);
             socket.join(userId);
-        })
+            const objectId=new mongoose.Types.ObjectId(userId);
+            const rooms=await Room.find({members:{$in:[objectId]}});
+        
+            for(let i=0;i<rooms.length;i++){
+                socket.join(rooms[i].id)
+            }
+            })
 
         // 친구 목록 조회
         socket.on("friendList", async (token, cb) => {
@@ -46,7 +53,7 @@ module.exports = function (io) {
             try {
                 const userId = await getUserIdFromToken(token);
                 const chatRoomListInfo = await roomController.findAllRoom(userId);
-
+               
                 cb({ chatRoomListInfo: chatRoomListInfo });
             } catch (err) {
                 console.log("roomList inquiry err");
@@ -59,7 +66,7 @@ module.exports = function (io) {
         socket.on("getAllChatsAndUser", async (roomId, token, cb) => {
             try {
 
-                console.log("roomId=" + roomId + " token=" + token);
+               
                 let userId = await getUserIdFromToken(token);
                 const user = await User.findOne({ _id: userId });
                 const chats = await chatController.findChatsByRoomId(roomId);
@@ -122,6 +129,7 @@ module.exports = function (io) {
                     const message = await chatController.saveChat(receivedMessage, user, roomId);
                     socket.join(roomId);
                     io.to(roomId).emit("message", message);
+                    io.to(roomId).emit("refreshRoomList");
                     return cb({ ok: true });
                 }
             } catch (err) {
@@ -151,7 +159,7 @@ module.exports = function (io) {
 
         socket.on("changePassword",async(token,password,cb)=>{
             try{
-                console.log("오긴함")
+               
                 const userId=await getUserIdFromToken(token);
                 await userController.updatePassword(userId,password);
                 cb({ok:true})
@@ -160,6 +168,14 @@ module.exports = function (io) {
                 cb({err:err});
             }
         })
+
+        //메시지 알림 데이터 조회
+        socket.on("alertMessage",async(chatId,cb)=>{
+            const alertMessage=await chatController.findAlertChat(chatId);
+            console.log("alert=",alertMessage)
+            cb({chat:alertMessage});
+        })
+
 
 
         socket.on("disconnect", () => {
