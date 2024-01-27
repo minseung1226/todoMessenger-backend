@@ -32,15 +32,12 @@ roomController.joinRoom = async (roomId, user) => {
     await user.save();
 }
 
-roomController.leaveRoom = async (user) => {
-    const room = await Room.findById(user.room);
-    if (!room) {
-        throw new Error("방 못찾음");
+roomController.leaveRoom = async (roomId,userId) => {
+    await Room.updateOne(
+        {_id:roomId},
+        {$pull:{members:userId}}
+    );
     }
-
-    room.members.remove(user._id);
-    await room.save();
-}
 
 // return =>room(room의 data,user(userId의 데이터 제외),chat)
 roomController.findAllRoom = async (strUserId) => {
@@ -79,6 +76,9 @@ roomController.findAllRoom = async (strUserId) => {
             }
         },
         {
+            $sort:{"chats.createAt":-1}
+        },
+        {
             $lookup: {
                 from: "users",
                 localField: "room.members",
@@ -87,6 +87,7 @@ roomController.findAllRoom = async (strUserId) => {
 
             }
         },
+        
         {
             $project: {
                 "roomName": { $ifNull: ["$room.roomName", ""] },

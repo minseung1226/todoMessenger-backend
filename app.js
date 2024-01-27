@@ -67,7 +67,7 @@ app.patch("/logout",authenticateToken,async(req,res)=>{
 
 app.post("/idDuplication",async(req,res)=>{
 
-    const user=await User.findOne({userId:req.body.loginId});
+    const user=await User.findOne({loginId:req.body.loginId});
     res.json({ok:user?false:true});
 })
 app.post("/join",async(req,res)=>{

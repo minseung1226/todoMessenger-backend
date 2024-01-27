@@ -26,13 +26,8 @@ module.exports = function (io) {
 
             const userId = await getUserIdFromToken(token);
             socket.join(userId);
-            const objectId=new mongoose.Types.ObjectId(userId);
-            const rooms=await Room.find({members:{$in:[objectId]}});
-        
-            for(let i=0;i<rooms.length;i++){
-                socket.join(rooms[i].id)
-            }
-            })
+
+        })
 
         // 친구 목록 조회
         socket.on("friendList", async (token, cb) => {
@@ -53,7 +48,11 @@ module.exports = function (io) {
             try {
                 const userId = await getUserIdFromToken(token);
                 const chatRoomListInfo = await roomController.findAllRoom(userId);
-               
+                chatRoomListInfo.forEach(room => {
+                    socket.join(room._id.toString());
+                })
+
+                console.log("rooms=",chatRoomListInfo);
                 cb({ chatRoomListInfo: chatRoomListInfo });
             } catch (err) {
                 console.log("roomList inquiry err");
@@ -65,12 +64,11 @@ module.exports = function (io) {
         // 채팅방 목록 조회
         socket.on("getAllChatsAndUser", async (roomId, token, cb) => {
             try {
-
-               
+                const roomName = await Room.findOne({ _id: roomId }, { roomName: 1, _id: 0 });
                 let userId = await getUserIdFromToken(token);
                 const user = await User.findOne({ _id: userId });
                 const chats = await chatController.findChatsByRoomId(roomId);
-                cb({ chats: chats, user: user });
+                cb({ chats: chats, user: user, roomName: roomName });
             } catch (err) {
                 cb({ err: err });
                 console.log(err.message);
@@ -88,7 +86,7 @@ module.exports = function (io) {
 
                 const room = await Room.findOne({ _id: roomId });
                 selectFriendIds.forEach(friendId => {
-                    io.to(friendId).emit("newRoom", room);
+                    io.to(friendId).emit("refreshRoomList");
                 })
                 cb({ ok: true, roomId: roomId });
             } catch (err) {
@@ -111,9 +109,8 @@ module.exports = function (io) {
                     online: user.online,
                     profileImg: user.profileImg
                 }
-                console.log("Emitting 'newFriend' event", { newFriend: friend });
                 socket.to(userId).emit("newFriend", { newFriend: friend });
-                console.log("Emitted 'newFriend' event");
+
 
                 cb({ ok: true });
             } catch (err) {
@@ -140,7 +137,7 @@ module.exports = function (io) {
 
         socket.on("findUser", async (token, cb) => {
             try {
-                
+
                 const userId = await getUserIdFromToken(token);
                 const user = await User.findOne({ _id: userId });
 
@@ -152,28 +149,42 @@ module.exports = function (io) {
         })
 
         socket.on("refreshUser", async (token) => {
-            const userId =await getUserIdFromToken(token);
+            const userId = await getUserIdFromToken(token);
 
             io.to(userId).emit("refreshUser");
         })
 
-        socket.on("changePassword",async(token,password,cb)=>{
-            try{
-               
-                const userId=await getUserIdFromToken(token);
-                await userController.updatePassword(userId,password);
-                cb({ok:true})
-            }catch(err){
+        socket.on("changePassword", async (token, password, cb) => {
+            try {
+
+                const userId = await getUserIdFromToken(token);
+                await userController.updatePassword(userId, password);
+                cb({ ok: true })
+            } catch (err) {
                 console.log("password change error");
-                cb({err:err});
+                cb({ err: err });
             }
         })
 
         //메시지 알림 데이터 조회
-        socket.on("alertMessage",async(chatId,cb)=>{
-            const alertMessage=await chatController.findAlertChat(chatId);
-            console.log("alert=",alertMessage)
-            cb({chat:alertMessage});
+        socket.on("alertMessage", async (chatId, cb) => {
+            const alertMessage = await chatController.findAlertChat(chatId);
+
+            cb({ chat: alertMessage });
+        })
+
+        socket.on("leaveRoom", async (token, roomId, cb) => {
+            try {
+                const userId = await getUserIdFromToken(token);
+                await roomController.leaveRoom(roomId, userId);
+
+                io.to(userId).emit("refreshRoomList");
+                cb({ ok: ok });
+            } catch (err) {
+                console.log("leave room error");
+                console.log("Err=", err);
+                cb({ err: err });
+            }
         })
 
 
@@ -182,8 +193,8 @@ module.exports = function (io) {
             console.log("user is disconnected");
         })
     });
-    
-    
+
+
 
     function makeSystemUser(roomId) {
         const system = {
