@@ -22,24 +22,28 @@ chatController.saveChat = async (message, user, roomId) => {
 chatController.findAlertChat = async (chatId) => {
     const objectId = new mongoose.Types.ObjectId(chatId);
 
-    return Chat.findOne({_id:objectId})
-                .populate(
-                    {
-                        path:"room",
-                        select:"_id roomName",
-                        populate:{
-                            path:"members",
-                            select:"profileImg",
-                            options:{limit:4}
-                        }
-                    }
-                )
-                .select("_id chat room");
+    return Chat.findOne({ _id: objectId })
+        .populate(
+            {
+                path: "room",
+                select: "_id roomName",
+                populate: {
+                    path: "members",
+                    select: "profileImg",
+                    options: { limit: 4 }
+                }
+            }
+        )
+        .select("_id chat room");
 
 }
 chatController.findChatsByRoomId = async (roomId) => {
     const chats = Chat.find({ room: roomId })
-        .populate('room')
+        .populate({
+            path:"user",
+            select:"name"
+        })
+        .select("_id chat createAt")
         .sort({ createdAt: 1 })
         .then(chats => {
             return chats;

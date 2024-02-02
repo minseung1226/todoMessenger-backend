@@ -7,16 +7,26 @@ roomController.getAllRooms = async () => {
 }
 
 roomController.createRoom = async (members, name) => {
-
+    console.log("name=",name);
     const room = new Room({
         members: members,
-        roomName: name
+        name: name
     })
 
     await room.save();
 
-
     return room._id;
+}
+
+roomController.findOneToOneRoom=async(userId1,userId2)=>{
+    const room=await Room.findOne({
+        members:{
+            $all:[userId1,userId2],
+            $size:2
+        }
+    });
+
+    return room;
 }
 
 roomController.joinRoom = async (roomId, user) => {
@@ -90,7 +100,7 @@ roomController.findAllRoom = async (strUserId) => {
         
         {
             $project: {
-                "roomName": { $ifNull: ["$room.roomName", ""] },
+                "name": { $ifNull: ["$room.name", ""] },
                 "chat": "$chat.chat",
                 "members": {
                     $filter: {

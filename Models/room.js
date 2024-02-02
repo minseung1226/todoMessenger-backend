@@ -2,7 +2,7 @@ const mongoose=require("mongoose");
 
 const roomSchema=new mongoose.Schema(
     {
-        roomName:String,
+        name:String,
         members:[
             {
                 type:mongoose.Schema.ObjectId,

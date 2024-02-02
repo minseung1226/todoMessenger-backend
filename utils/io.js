@@ -52,7 +52,6 @@ module.exports = function (io) {
                     socket.join(room._id.toString());
                 })
 
-                console.log("rooms=",chatRoomListInfo);
                 cb({ chatRoomListInfo: chatRoomListInfo });
             } catch (err) {
                 console.log("roomList inquiry err");
@@ -64,16 +63,24 @@ module.exports = function (io) {
         // 채팅방 목록 조회
         socket.on("getAllChatsAndUser", async (roomId, token, cb) => {
             try {
-                const roomName = await Room.findOne({ _id: roomId }, { roomName: 1, _id: 0 });
+                const room = await Room.findOne({ _id: roomId }, { name: 1, _id: 1 });
                 let userId = await getUserIdFromToken(token);
                 const user = await User.findOne({ _id: userId });
                 const chats = await chatController.findChatsByRoomId(roomId);
-                cb({ chats: chats, user: user, roomName: roomName });
+               
+                const roomChatUser={
+                    room:room,
+                    user:user,
+                    chats:chats
+                }
+                cb({roomChatUser:roomChatUser});
             } catch (err) {
                 cb({ err: err });
                 console.log(err.message);
             }
         })
+
+
 
         //채팅방 생성
         socket.on("createChatRoom", async (token, selectFriendIds, cb) => {
@@ -82,16 +89,28 @@ module.exports = function (io) {
                 selectFriendIds.push(userId);
                 const users = await User.find({ _id: selectFriendIds });
                 const userNames = users.map(user => user.name).join(","); // 방이름 (이름1,이름2,이름3) 생성
+
+                //1대1 채팅이고, 채팅방이 이미 있다면 roomId 응답
+                if (users.length == 2) {
+                    const room = await roomController.findOneToOneRoom(users[0]._id, users[1]._id);
+
+                    if (room) {
+                        cb({ ok: true, roomId: room._id });
+                        return;
+                    }
+                }
+                //그렇지 않을 경우 채팅방 생성 후 roomId응답
                 const roomId = await roomController.createRoom(selectFriendIds, userNames);
 
-                const room = await Room.findOne({ _id: roomId });
                 selectFriendIds.forEach(friendId => {
                     io.to(friendId).emit("refreshRoomList");
                 })
                 cb({ ok: true, roomId: roomId });
+
+
             } catch (err) {
                 console.log("createChatRoom error");
-                throw error;
+                throw err;
             }
         })
 
@@ -109,7 +128,7 @@ module.exports = function (io) {
                     online: user.online,
                     profileImg: user.profileImg
                 }
-                socket.to(userId).emit("newFriend", { newFriend: friend });
+                socket.emit("newFriend", { newFriend: friend });
 
 
                 cb({ ok: true });
@@ -125,6 +144,14 @@ module.exports = function (io) {
                 if (user) {
                     const message = await chatController.saveChat(receivedMessage, user, roomId);
                     socket.join(roomId);
+
+                    const room = io.sockets.adapter.rooms.get(roomId);
+                    if (room) {
+                        const sockets = Array.from(room); // 소켓 ID 목록
+                        console.log(`Room ${roomId}의 소켓들:`, sockets);
+                    }
+
+
                     io.to(roomId).emit("message", message);
                     io.to(roomId).emit("refreshRoomList");
                     return cb({ ok: true });
@@ -179,7 +206,7 @@ module.exports = function (io) {
                 await roomController.leaveRoom(roomId, userId);
 
                 io.to(userId).emit("refreshRoomList");
-                cb({ ok: ok });
+                cb({ ok: true });
             } catch (err) {
                 console.log("leave room error");
                 console.log("Err=", err);
