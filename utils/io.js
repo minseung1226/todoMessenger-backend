@@ -52,9 +52,10 @@ module.exports = function (io) {
                     socket.join(room._id.toString());
                 })
 
+
                 cb({ chatRoomListInfo: chatRoomListInfo });
             } catch (err) {
-                console.log("roomList inquiry err");
+                console.log("roomList inquiry err=",err);
             }
         })
 
@@ -66,6 +67,7 @@ module.exports = function (io) {
                 const room = await Room.findOne({ _id: roomId }, { name: 1, _id: 1 });
                 let userId = await getUserIdFromToken(token);
                 const user = await User.findOne({ _id: userId });
+                await chatController.readChats(room._id,user._id);
                 const chats = await chatController.findChatsByRoomId(roomId);
                
                 const roomChatUser={
@@ -73,6 +75,7 @@ module.exports = function (io) {
                     user:user,
                     chats:chats
                 }
+                socket.emit("refreshRoomList");
                 cb({roomChatUser:roomChatUser});
             } catch (err) {
                 cb({ err: err });
@@ -142,17 +145,13 @@ module.exports = function (io) {
                 const userId = await getUserIdFromToken(token);
                 const user = await User.findOne({ _id: userId });
                 if (user) {
-                    const message = await chatController.saveChat(receivedMessage, user, roomId);
+                    const room=await Room.findOne({_id:roomId});
+                    const friendIds=room.members.filter(memberId=>memberId.toString()!==userId);
+                    const message = await chatController.saveChat(receivedMessage, user, roomId,friendIds);
                     socket.join(roomId);
 
-                    const room = io.sockets.adapter.rooms.get(roomId);
-                    if (room) {
-                        const sockets = Array.from(room); // 소켓 ID 목록
-                        console.log(`Room ${roomId}의 소켓들:`, sockets);
-                    }
-
-
                     io.to(roomId).emit("message", message);
+                    io.to(roomId).emit("messageAlert",message);
                     io.to(roomId).emit("refreshRoomList");
                     return cb({ ok: true });
                 }
@@ -177,8 +176,7 @@ module.exports = function (io) {
 
         socket.on("refreshUser", async (token) => {
             const userId = await getUserIdFromToken(token);
-
-            io.to(userId).emit("refreshUser");
+            socket.to(userId).emit("refreshUser");
         })
 
         socket.on("changePassword", async (token, password, cb) => {
@@ -196,7 +194,6 @@ module.exports = function (io) {
         //메시지 알림 데이터 조회
         socket.on("alertMessage", async (chatId, cb) => {
             const alertMessage = await chatController.findAlertChat(chatId);
-
             cb({ chat: alertMessage });
         })
 
@@ -212,6 +209,11 @@ module.exports = function (io) {
                 console.log("Err=", err);
                 cb({ err: err });
             }
+        })
+        socket.on("openRoom",async(roomId,token)=>{
+            const userId=await getUserIdFromToken(token);
+            console.log("백앤드 roomId=",roomId);
+            socket.to(userId).emit("openRoom",roomId);
         })
 
 

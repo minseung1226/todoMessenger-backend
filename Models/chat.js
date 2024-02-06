@@ -15,6 +15,13 @@ const chatSchema=new mongoose.Schema(
             type:mongoose.Schema.ObjectId,
             ref:"Room",
         },
+        unreadMembers:[
+            {
+                type:mongoose.Schema.ObjectId,
+                ref:"User"
+            }
+
+        ]
     },
     {timestamps:true}
 

@@ -3,7 +3,19 @@ const Chat = require("../Models/chat");
 
 const chatController = {}
 
-chatController.saveChat = async (message, user, roomId) => {
+chatController.readChats=async(roomId,userId)=>{
+
+    try{
+        await Chat.updateMany(
+            {room:roomId,unreadMembers:userId},
+            {$pull:{unreadMembers:userId}}
+        );
+    }catch(err){
+        console.log("readChats err");
+        throw err;
+    }
+}
+chatController.saveChat = async (message, user, roomId,members) => {
 
     const newMessage = new Chat({
         chat: message,
@@ -11,7 +23,8 @@ chatController.saveChat = async (message, user, roomId) => {
             id: user._id,
             name: user.name,
         },
-        room: roomId
+        room: roomId,
+        unreadMembers:members
 
     });
 
@@ -26,7 +39,7 @@ chatController.findAlertChat = async (chatId) => {
         .populate(
             {
                 path: "room",
-                select: "_id roomName",
+                select: "_id name",
                 populate: {
                     path: "members",
                     select: "profileImg",
@@ -41,9 +54,9 @@ chatController.findChatsByRoomId = async (roomId) => {
     const chats = Chat.find({ room: roomId })
         .populate({
             path:"user",
-            select:"name"
+            select:"name profileImg"
         })
-        .select("_id chat createAt")
+        .select("_id chat createdAt unreadMembers")
         .sort({ createdAt: 1 })
         .then(chats => {
             return chats;
