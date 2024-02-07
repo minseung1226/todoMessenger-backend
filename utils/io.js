@@ -69,7 +69,7 @@ module.exports = function (io) {
                 const user = await User.findOne({ _id: userId });
                 await chatController.readChats(room._id,user._id);
                 const chats = await chatController.findChatsByRoomId(roomId);
-               
+          
                 const roomChatUser={
                     room:room,
                     user:user,
