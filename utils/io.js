@@ -5,6 +5,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../Models/user");
 const Room = require("../Models/room");
 const { default: mongoose } = require("mongoose");
+
+const userRooms={};
 // JWT TOKEN userId로 변환
 function getUserIdFromToken(token) {
     return new Promise((resolve, reject) => {
@@ -52,8 +54,7 @@ module.exports = function (io) {
                     socket.join(room._id.toString());
                 })
 
-
-                cb({ chatRoomListInfo: chatRoomListInfo });
+                 cb({ chatRoomListInfo: chatRoomListInfo });
             } catch (err) {
                 console.log("roomList inquiry err=",err);
             }
@@ -70,12 +71,18 @@ module.exports = function (io) {
                 await chatController.readChats(room._id,user._id);
                 const chats = await chatController.findChatsByRoomId(roomId);
           
+                //채팅방에 들어갔을 때 userRooms에 추가
+                if(!userRooms[room._id.toString()]){
+                    userRooms[room._id.toString()]=[];
+                }
+                userRooms[room._id.toString()].push(userId);
                 const roomChatUser={
                     room:room,
                     user:user,
                     chats:chats
                 }
                 socket.emit("refreshRoomList");
+                socket.to(room._id.toString()).emit("refreshChats",chats);
                 cb({roomChatUser:roomChatUser});
             } catch (err) {
                 cb({ err: err });
@@ -146,12 +153,15 @@ module.exports = function (io) {
                 const user = await User.findOne({ _id: userId });
                 if (user) {
                     const room=await Room.findOne({_id:roomId});
-                    const friendIds=room.members.filter(memberId=>memberId.toString()!==userId);
+                    const friendIds=room.members.filter(memberId=>!userRooms[roomId.toString()].includes(memberId.toString()));
                     const message = await chatController.saveChat(receivedMessage, user, roomId,friendIds);
                     socket.join(roomId);
 
                     io.to(roomId).emit("message", message);
-                    io.to(roomId).emit("messageAlert",message);
+                    // io.to(roomId).emit("messageAlert",message);
+                    friendIds.forEach(friendId=>{
+                        io.to(friendId.toString()).emit("messageAlert",message);
+                    })
                     io.to(roomId).emit("refreshRoomList");
                     return cb({ ok: true });
                 }
@@ -212,8 +222,16 @@ module.exports = function (io) {
         })
         socket.on("openRoom",async(roomId,token)=>{
             const userId=await getUserIdFromToken(token);
-            console.log("백앤드 roomId=",roomId);
             socket.to(userId).emit("openRoom",roomId);
+        })
+
+        socket.on("roomOut",async(roomId,token)=>{
+            const userId=await getUserIdFromToken(token);
+            if(userRooms[roomId]){
+                userRooms[roomId]=userRooms[roomId].filter(id=>id!==userId.toString());
+
+            }
+              
         })
 
 

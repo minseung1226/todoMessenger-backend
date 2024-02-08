@@ -136,7 +136,7 @@ roomController.findAllRoom = async (strUserId) => {
             }
         },
         { $unwind: "$chats" },
-        { $sort: { "chats.createdAt": -1 } },
+         { $sort: { "chats.createdAt": -1 } },
         {
             $group: {
                 _id: "$_id",
@@ -178,6 +178,7 @@ roomController.findAllRoom = async (strUserId) => {
             $project: {
                 "name": { $ifNull: ["$room.name", ""] },
                 "chat": { $arrayElemAt: ["$chats.chat", 0] }, // 최신 채팅 정보
+                "chatCreatedAt": { $arrayElemAt: ["$chats.createdAt", 0] }, // 최신 채팅의 createdAt
                 "unreadCount": 1, // unreadCount 추가
                 "members": {
                     $filter: {
@@ -199,7 +200,7 @@ roomController.findAllRoom = async (strUserId) => {
                 }
             }
         },
-        { $sort: { "chat.createdAt": -1 } }
+        { $sort: { "chatCreatedAt": -1 } }
     ]).exec();
 }
 
