@@ -21,14 +21,12 @@ function getUserIdFromToken(token) {
     });
 }
 module.exports = function (io) {
-    //io ~~~~
+    //io
     io.on("connection", async (socket) => {
         console.log("connect")
         socket.on("userIdJoin", async (token) => {
-
             const userId = await getUserIdFromToken(token);
             socket.join(userId);
-
         })
 
         // 친구 목록 조회

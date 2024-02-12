@@ -45,7 +45,8 @@ app.patch("/user/update",authenticateToken,profileImgUpdate,async(req,res)=>{
 })
 app.post("/login",async(req,res)=>{
     const user=await User.findOne({loginId:req.body.loginId});
-    if(!user || !bcrypt.compare(req.body.pw,user.pw)){
+
+    if(!user ||!(await bcrypt.compare(req.body.pw,user.pw))){
         res.json({ok:false});
     }
     else{
