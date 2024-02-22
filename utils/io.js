@@ -1,6 +1,7 @@
 const chatController = require("../Controllers/chat.controller");
 const roomController = require("../Controllers/room.controller");
-const userController = require("../Controllers/user.controller")
+const userController = require("../Controllers/user.controller");
+const scheduleController=require("../Controllers/schedule.controller");
 const jwt = require("jsonwebtoken");
 const User = require("../Models/user");
 const Room = require("../Models/room");
@@ -230,6 +231,13 @@ module.exports = function (io) {
 
             }
               
+        })
+
+        //일정 등록
+        socket.on("scheduleCreate",async(token,message,dates,cb)=>{
+            const userId=await getUserIdFromToken(token);
+            await scheduleController.saveSchedule(dates,message,userId);
+            cb({ok:true})
         })
 
 

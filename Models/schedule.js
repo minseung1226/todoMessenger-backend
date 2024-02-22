@@ -3,9 +3,9 @@ const mongoose=require("mongoose")
 
 const scheduleSchema=new mongoose.Schema(
     {
-        title:String,
         message:String,
-        notificationTime:Date,
+        scheduleDate:Date,
+        success:Boolean,
         user:{
             id:{
                 type:mongoose.Schema.ObjectId,

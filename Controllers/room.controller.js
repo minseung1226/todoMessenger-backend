@@ -7,7 +7,6 @@ roomController.getAllRooms = async () => {
 }
 
 roomController.createRoom = async (members, name) => {
-    console.log("name=",name);
     const room = new Room({
         members: members,
         name: name
@@ -53,78 +52,6 @@ roomController.leaveRoom = async (roomId,userId) => {
 roomController.findAllRoom = async (strUserId) => {
     const userId = new mongoose.Types.ObjectId(strUserId);
 
-    // return await Room.aggregate([
-    //     //userId를 포함하는 members를 가진 데이터
-    //     { $match: { members: { $in: [userId] } } },
-
-    //     //roomId로 조인
-    //     {
-    //         $lookup: {
-    //             from: "chats",
-    //             localField: "_id",
-    //             foreignField: "room",
-    //             as: "chats"
-    //         }
-    //     },
-    //     //chats가 배열이 아닌 단일 필드로 만들어짐
-    //     //즉 하나의 chats를 가진 room들로 변환
-    //     {
-    //         $unwind: {
-    //             path: "$chats",
-    //             preserveNullAndEmptyArrays: true
-    //         }
-    //     },
-    //     { $sort: { "chats.createdAt": -1 } },
-
-    //     //roomId로 다시 그룹화 시킴
-    //     //이떄 room은 첫번째 chat만을 가지게 됨
-    //     {
-    //         $group: {
-    //             _id: "$_id",
-    //             room: { $first: "$$ROOT" },
-    //             chat: { $first: "$chats" }
-    //         }
-    //     },
-    //     {
-    //         $sort:{"chat.createdAt":-1}
-    //     },
-    //     {
-    //         $lookup: {
-    //             from: "users",
-    //             localField: "room.members",
-    //             foreignField: "_id",
-    //             as: "members"
-
-    //         }
-    //     },
-        
-    //     {
-    //         $project: {
-    //             "name": { $ifNull: ["$room.name", ""] },
-    //             "chat": "$chat.chat",
-    //             "members": {
-    //                 $filter: {
-    //                     input: {
-    //                         $map: {
-    //                             input: "$members",
-    //                             as: "member",
-    //                             in: {
-    //                                 _id: "$$member._id", 
-    //                                 name: "$$member.name",
-    //                                 profileImg: "$$member.profileImg",
-    //                                 online: "$$member.online"
-    //                             }
-    //                         }
-    //                     },
-    //                     as: "member",
-    //                     cond: { $ne: ["$$member._id", userId] }
-    //                 }
-    //             }
-    //         }
-    //     }
-
-
-    // ]).exec();
     return Room.aggregate([
         { $match: { members: { $in: [userId] } } },
         {
