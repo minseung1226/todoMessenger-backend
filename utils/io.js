@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../Models/user");
 const Room = require("../Models/room");
 const { default: mongoose } = require("mongoose");
+const schedule = require("../Models/schedule");
 
 const userRooms={};
 // JWT TOKEN userId로 변환
@@ -236,8 +237,14 @@ module.exports = function (io) {
         //일정 등록
         socket.on("scheduleCreate",async(token,message,dates,cb)=>{
             const userId=await getUserIdFromToken(token);
-            console.log("userId=",userId);
             await scheduleController.saveSchedule(dates,message,userId);
+
+            const date =new Date();
+            const schedules=await scheduleController.findSchedule(userId,date);
+            const scheduleCount=await scheduleController
+                                        .getScheduleCountsForMonth(userId,date);
+            
+            socket.emit("refreshScheduleAndCount",schedules,scheduleCount);
             cb({ok:true})
         })
 
@@ -248,11 +255,20 @@ module.exports = function (io) {
 
         //해당 날짜의 스케줄 찾기
         socket.on("schedule",async(token,date,cb)=>{
-            console.log("date=",new Date(date));
             const userId=await getUserIdFromToken(token);
             const schedules=await scheduleController.findSchedule(userId,date);
-            console.log("schedule=",schedules);
             cb(schedules);
+        })
+
+        //일별 스케줄 개수
+        socket.on("getScheduleCountForMonth",async(token,date,cb)=>{
+            const userId=await getUserIdFromToken(token);
+
+            const scheduleCount=await scheduleController
+                                        .getScheduleCountsForMonth(userId,date);
+            
+            cb(scheduleCount);
+
         })
 
 
