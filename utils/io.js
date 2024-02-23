@@ -271,6 +271,12 @@ module.exports = function (io) {
 
         })
 
+        //단일 스케줄 삭제
+        socket.on("deleteSchedule",async(scheduleId,cb)=>{
+            await scheduleController.deleteSchedule(scheduleId);
+            cb({ok:true});
+        })
+
 
 
         socket.on("disconnect", () => {

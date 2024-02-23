@@ -100,5 +100,17 @@ scheduleController.getScheduleCountsForMonth=async(userId,dateString)=>{
     },{});
 }
 
+scheduleController.deleteSchedule=async(scheduleId)=>{
+  const objectId=new mongoose.Types.ObjectId(scheduleId);
+  try{
+    const result=await Schedule.deleteOne({_id:objectId});
+  }catch(err){
+    console.log("delete schedule error");
+    throw err;
+  }
+
+
+}
+
 
 module.exports=scheduleController;
