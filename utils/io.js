@@ -236,8 +236,23 @@ module.exports = function (io) {
         //일정 등록
         socket.on("scheduleCreate",async(token,message,dates,cb)=>{
             const userId=await getUserIdFromToken(token);
+            console.log("userId=",userId);
             await scheduleController.saveSchedule(dates,message,userId);
             cb({ok:true})
+        })
+
+        //일정 완료 처리
+        socket.on("ScheduleChangeSuccess",async(scheduleId)=>{
+            await scheduleController.changeSchedule(scheduleId);
+        })
+
+        //해당 날짜의 스케줄 찾기
+        socket.on("schedule",async(token,date,cb)=>{
+            console.log("date=",new Date(date));
+            const userId=await getUserIdFromToken(token);
+            const schedules=await scheduleController.findSchedule(userId,date);
+            console.log("schedule=",schedules);
+            cb(schedules);
         })
 
 
