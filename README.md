@@ -61,8 +61,9 @@
 |스케줄 삭제|deleteSchedule|on|scheduleId:[String]|ok:[Boolean]|
 
 <hr>
+
 **To do Messenger-front** :
-[github-front]([https://github.com/minseung1226/todoMessenger-backend](https://github.com/minseung1226/todoMessenger-front))
+[github-front](https://github.com/minseung1226/todoMessenger-front)
 <br/>
 **Notion** : 
 [Notion](https://quaint-halloumi-dde.notion.site/To-Do-Messenger-0363888d71914ba1bf3a14d6bf4e512a?pvs=4)
